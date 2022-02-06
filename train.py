@@ -19,6 +19,7 @@ opt = parser.parse_args()
 print(opt)
 
 cuda = True if torch.cuda.is_available() else False
+device = torch.device("cuda" if cuda else "cpu")
 
 
 def weights_init_normal(m):
@@ -33,6 +34,8 @@ def weights_init_normal(m):
 bce_loss = torch.nn.BCELoss()
 
 model = Model(opt)
+print(model)
+
 if cuda:
     model.cuda()
     bce_loss.cuda()
@@ -52,9 +55,21 @@ dataloader = torch.utils.data.DataLoader(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
-for n in range(opt.epoch):
+for epoch in range(opt.epoch):
     for i, (imgs, label) in enumerate(dataloader):
-        output = model(imgs)
+        optimizer.zero_grad()
+
+        label = label.float().to(device)
+
+        inputs = imgs.to(device)
+        output = model(inputs)
+        output = output.reshape(-1)
         loss = bce_loss(output, label)
+
         loss.backward()
         optimizer.step()
+
+        print(
+            "[Epoch %d/%d] [Batch %d/%d] [D loss: %f]"
+            % (epoch, opt.epoch, i, len(dataloader), loss.item())
+        )
