@@ -14,7 +14,6 @@ def block(num_convs, in_channels, out_channels):
 
 
 class Model(nn.Module):
-
     def __init__(self, opt):
         super(Model, self).__init__()
         net = [block(1, 3, 64),
