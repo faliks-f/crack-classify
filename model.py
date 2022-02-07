@@ -1,7 +1,7 @@
 from torch import nn
 
 
-def vgg_block(num_convs, in_channels, out_channels):
+def block(num_convs, in_channels, out_channels):
     net = [nn.Conv2d(in_channels, out_channels, kernel_size=(3, 3), padding=1), nn.ReLU(True)]
 
     for i in range(num_convs - 1):
@@ -17,11 +17,11 @@ class Model(nn.Module):
 
     def __init__(self, opt):
         super(Model, self).__init__()
-        net = [vgg_block(1, 3, 64),
-               vgg_block(1, 64, 128),
-               vgg_block(2, 128, 256),
-               vgg_block(2, 256, 512),
-               vgg_block(2, 512, 512)]
+        net = [block(1, 3, 64),
+               block(1, 64, 128),
+               block(2, 128, 256),
+               block(2, 256, 512),
+               block(2, 512, 512)]
         self.net = nn.Sequential(*net)
         size = opt.img_size // 2 ** 5
         self.output_layer = nn.Sequential(
