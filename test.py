@@ -38,21 +38,18 @@ dataloader = torch.utils.data.DataLoader(
     shuffle=False,
 )
 
-TP = 0
-FP = 0
-FN = 0
-correct = 0
-total = 0
+test_result = Result()
 
 for i, (inputs, label) in enumerate(dataloader):
     inputs = inputs.to(device)
     label = label.to(device)
-    output = model(inputs)
 
-    TP, FP, FN, correct, total = judge(output, label, TP, FP, FN, correct, total)
+    output = model(inputs)
+    test_result.update(label, output)
+
     print("[Batch %d/%d]" % (i, len(dataloader)))
 
-precision, recall, F1, accuracy = cal_res(TP, FP, FN, correct, total)
+precision, recall, F1, accuracy = test_result.get_result()
 
 print(
     "[P: %.2f%%] [R: %.2f%%] [F1: %.2f%%] [Accuracy: %.2f%%]"

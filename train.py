@@ -62,12 +62,10 @@ dataloader = torch.utils.data.DataLoader(
 
 optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, betas=(opt.b1, opt.b2))
 
+train_result = Result()
+
 for epoch in range(opt.epoch):
-    TP = 0
-    FP = 0
-    FN = 0
-    correct = 0
-    total = 0
+    train_result.clear()
     for i, (inputs, label) in enumerate(dataloader):
         optimizer.zero_grad()
 
@@ -82,8 +80,8 @@ for epoch in range(opt.epoch):
         loss.backward()
         optimizer.step()
 
-        TP, FP, FN, correct, total = judge(output, label, TP, FP, FN, correct, total)
-        precision, recall, F1, accuracy = cal_res(TP, FP, FN, correct, total)
+        train_result.update(label, output)
+        precision, recall, F1, accuracy = train_result.get_result()
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [P: %.2f%%] [R: %.2f%%] [F1: %.2f%%] [Accuracy: %.2f%%]"
