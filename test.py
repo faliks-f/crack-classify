@@ -21,7 +21,6 @@ device = torch.device("cuda" if cuda else "cpu")
 
 model = Model(opt)
 
-# load model from pt file
 model.load_state_dict(torch.load(opt.model_path))
 
 if cuda:

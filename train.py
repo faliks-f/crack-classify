@@ -48,7 +48,6 @@ if opt.continue_train_path != "":
 else:
     model.apply(weights_init_normal)
 
-# Negative: 0, Positive: 1
 dataloader = torch.utils.data.DataLoader(
     ImageFolder(
         opt.dataset,
