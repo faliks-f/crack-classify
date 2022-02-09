@@ -1,4 +1,5 @@
 from model import Model
+from utils import *
 
 import torch.utils.data
 
@@ -8,12 +9,13 @@ from torchvision.transforms import transforms
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--dataset", default="./data/small/", type=str, help="path of dataset")
+parser.add_argument("-d", "--dataset", default="./data/train/", type=str, help="path of dataset")
 parser.add_argument("-s", "--img_size", default=256, type=int, help="size of image")
 parser.add_argument("-b", "--batch_size", default=8, type=int, help="batch size")
-parser.add_argument("-n", "--epoch", default=1, type=int, help="epoch")
+parser.add_argument("-n", "--epoch", default=2, type=int, help="epoch")
 parser.add_argument("-m", "--model_path", default="./model/model.pt", type=str, help="path of model")
 parser.add_argument("-l", "--label_path", default="./model/label.txt", type=str, help="path of label")
+parser.add_argument("-c", "--continue_train_path", default="", type=str, help="path of model needed to continue train")
 parser.add_argument("--lr", default=0.0002, type=float, help="adam: learning rate")
 parser.add_argument("--b1", default=0.5, type=float, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", default=0.999, type=float, help="adam: decay of first order momentum of gradient")
@@ -41,7 +43,10 @@ if cuda:
     model.cuda()
     bce_loss.cuda()
 
-model.apply(weights_init_normal)
+if opt.continue_train_path != "":
+    model.load_state_dict(torch.load(opt.continue_train_path))
+else:
+    model.apply(weights_init_normal)
 
 # Negative: 0, Positive: 1
 dataloader = torch.utils.data.DataLoader(
@@ -60,16 +65,15 @@ optimizer = torch.optim.Adam(model.parameters(), lr=opt.lr, betas=(opt.b1, opt.b
 for epoch in range(opt.epoch):
     TP = 0
     FP = 0
-    TN = 0
     FN = 0
     correct = 0
     total = 0
-    for i, (imgs, label) in enumerate(dataloader):
+    for i, (inputs, label) in enumerate(dataloader):
         optimizer.zero_grad()
 
         label = label.float().to(device)
 
-        inputs = imgs.to(device)
+        inputs = inputs.to(device)
         output = model(inputs)
 
         output = output.reshape(-1)
@@ -78,23 +82,8 @@ for epoch in range(opt.epoch):
         loss.backward()
         optimizer.step()
 
-        for j in range(len(output)):
-            if output[j] > 0.5 and label[j] == 1:
-                TP += 1
-            elif output[j] > 0.5 and label[j] == 0:
-                FP += 1
-            elif output[j] < 0.5 and label[j] == 0:
-                TN += 1
-            elif output[j] < 0.5 and label[j] == 1:
-                FN += 1
-            if abs(output[j] - label[j]) < 0.5:
-                correct += 1
-            total += 1
-
-        precision = TP / (TP + FP) if (TP + FP) != 0 else 0
-        recall = TP / (TP + FN) if (TP + FN) != 0 else 0
-        F1 = 2 * precision * recall / (precision + recall) if (precision + recall) != 0 else 0
-        accuracy = correct / total
+        TP, FP, FN, correct, total = judge(output, label, TP, FP, FN, correct, total)
+        precision, recall, F1, accuracy = cal_res(TP, FP, FN, correct, total)
 
         print(
             "[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [P: %.2f%%] [R: %.2f%%] [F1: %.2f%%] [Accuracy: %.2f%%]"

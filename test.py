@@ -1,4 +1,5 @@
 from model import Model
+from utils import *
 
 import torch.utils.data
 
@@ -8,7 +9,7 @@ from torchvision.transforms import transforms
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--dataset", default="./data/valid/", type=str, help="path of dataset")
+parser.add_argument("-d", "--dataset", default="./data/test/", type=str, help="path of dataset")
 parser.add_argument("-s", "--img_size", default=256, type=int, help="size of image")
 parser.add_argument("-b", "--batch_size", default=8, type=int, help="batch size")
 parser.add_argument("-m", "--model_path", default="./model/model.pt", type=str, help="path of model")
@@ -39,34 +40,19 @@ dataloader = torch.utils.data.DataLoader(
 
 TP = 0
 FP = 0
-TN = 0
 FN = 0
 correct = 0
 total = 0
 
-for i, (imgs, label) in enumerate(dataloader):
-    imgs = imgs.to(device)
+for i, (inputs, label) in enumerate(dataloader):
+    inputs = inputs.to(device)
     label = label.to(device)
-    output = model(imgs)
+    output = model(inputs)
 
-    for j in range(len(output)):
-        if output[j] > 0.5 and label[j] == 1:
-            TP += 1
-        elif output[j] > 0.5 and label[j] == 0:
-            FP += 1
-        elif output[j] < 0.5 and label[j] == 0:
-            TN += 1
-        elif output[j] < 0.5 and label[j] == 1:
-            FN += 1
-        if abs(output[j] - label[j]) < 0.5:
-            correct += 1
-        total += 1
+    TP, FP, FN, correct, total = judge(output, label, TP, FP, FN, correct, total)
     print("[Batch %d/%d]" % (i, len(dataloader)))
 
-precision = TP / (TP + FP) if (TP + FP) != 0 else 0
-recall = TP / (TP + FN) if (TP + FN) != 0 else 0
-F1 = 2 * precision * recall / (precision + recall) if (precision + recall) != 0 else 0
-accuracy = correct / total
+precision, recall, F1, accuracy = cal_res(TP, FP, FN, correct, total)
 
 print(
     "[P: %.2f%%] [R: %.2f%%] [F1: %.2f%%] [Accuracy: %.2f%%]"
