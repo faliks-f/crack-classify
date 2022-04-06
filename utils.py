@@ -22,7 +22,6 @@ class Result:
             elif output[j] < 0.5 and label[j] == 1:
                 self.FN += 1
             if abs(output[j] - label[j]) < 0.5:
-                print(output[j], label[j])
                 self.correct += 1
             self.total += 1
 
