@@ -13,7 +13,7 @@ class Result:
         self.correct = 0
         self.total = 0
 
-    def update(self, output, label):
+    def update(self, label, output):
         for j in range(len(output)):
             if output[j] > 0.5 and label[j] == 1:
                 self.TP += 1
@@ -22,6 +22,7 @@ class Result:
             elif output[j] < 0.5 and label[j] == 1:
                 self.FN += 1
             if abs(output[j] - label[j]) < 0.5:
+                print(output[j], label[j])
                 self.correct += 1
             self.total += 1
 
