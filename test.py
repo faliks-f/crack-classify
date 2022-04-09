@@ -1,6 +1,6 @@
 from model import Model
 from utils import *
-
+import time
 import torch.utils.data
 
 from torchvision.datasets import ImageFolder
@@ -9,9 +9,9 @@ from torchvision.transforms import transforms
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-d", "--dataset", default="./data/test/", type=str, help="path of dataset")
+parser.add_argument("-d", "--dataset", default="./data/small/", type=str, help="path of dataset")
 parser.add_argument("-s", "--img_size", default=256, type=int, help="size of image")
-parser.add_argument("-b", "--batch_size", default=8, type=int, help="batch size")
+parser.add_argument("-b", "--batch_size", default=1, type=int, help="batch size")
 parser.add_argument("-m", "--model_path", default="./model/model.pt", type=str, help="path of model")
 opt = parser.parse_args()
 print(opt)
@@ -43,14 +43,17 @@ for i, (inputs, label) in enumerate(dataloader):
     inputs = inputs.to(device)
     label = label.to(device)
 
+    torch.cuda.synchronize()
+    start = time.time()
     output = model(inputs)
+    torch.cuda.synchronize()
+    end = time.time()
+    print("[Batch %d/%d] [Time %.4f]" % (i, len(dataloader), end - start))
     test_result.update(label, output)
-
-    print("[Batch %d/%d]" % (i, len(dataloader)))
 
 precision, recall, F1, accuracy = test_result.get_result()
 
 print(
-    "[P: %.2f%%] [R: %.2f%%] [F1: %.2f%%] [Accuracy: %.2f%%]"
+    "[P: %.4f%%] [R: %.4f%%] [F1: %.4f%%] [Accuracy: %.4f%%]"
     % (100 * precision, 100 * recall, 100 * F1, 100 * accuracy)
 )
